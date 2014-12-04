@@ -64,14 +64,10 @@ get_ets_size(Tab) ->
 %% Same as {@link ets:update_counter/3} but inserts `{Key, Value}' if object
 %% is missing in the table.
 update_counter(Tid, Key, Value) when is_integer(Value) ->
-    %% try to update the counter, will badarg if it doesn't exist
-    try ets:update_counter(Tid, Key, Value) of
-        Res ->
-            Res
-    catch
-        error:badarg ->
-            %% row didn't exist, create it
-            %% use insert_new to avoid races
+    case ets:lookup(Tid, Key) of
+        [_] ->
+            ets:update_counter(Tid, Key, Value);
+        [] ->
             case ets:insert_new(Tid, {Key, Value}) of
                 true ->
                     Value;
